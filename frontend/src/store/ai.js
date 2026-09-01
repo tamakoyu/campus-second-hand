@@ -1,15 +1,16 @@
 // AI 问答会话状态 + 推荐位数据（详情页 AI 问答 / 首页推荐位）
 import { defineStore } from 'pinia'
 import aiApi from '@/api/ai'
+import goodsApi from '@/api/goods'
 
 export const useAiStore = defineStore('ai', {
   state: () => ({
     // 问答会话：{ [productId]: { messages: [{role, content, manual?}], loading: boolean } }
     chats: {},
-    // 推荐位：{ home: { items: [], loading }, detail: { items: [], loading } }
+    // 推荐位：{ home: { items, loading, degraded }, detail: {...} }（degraded=接口失败已降级为最新商品）
     recommends: {
-      home: { items: [], loading: false },
-      detail: { items: [], loading: false }
+      home: { items: [], loading: false, degraded: false },
+      detail: { items: [], loading: false, degraded: false }
     }
   }),
 
@@ -19,7 +20,7 @@ export const useAiStore = defineStore('ai', {
     /** 指定商品问答是否加载中 */
     chatLoadingOf: (state) => (productId) => !!state.chats[productId]?.loading,
     /** 指定场景推荐位数据 */
-    recommendOf: (state) => (scene) => state.recommends[scene] || { items: [], loading: false }
+    recommendOf: (state) => (scene) => state.recommends[scene] || { items: [], loading: false, degraded: false }
   },
 
   actions: {
@@ -67,21 +68,44 @@ export const useAiStore = defineStore('ai', {
     },
 
     /**
-     * 拉取推荐位（home 免登录；detail 传 productId）。失败时静默，页面展示兜底。
+     * 拉取推荐位（home 免登录；detail 传 productId）。
+     * 接口失败时静默降级为最新商品（计划书步骤 7），并标记 degraded 供 UI 提示。
      * @param {'home'|'detail'} scene
      */
     async fetchRecommend(scene, { productId, limit = 8 } = {}) {
-      const slot = this.recommends[scene] || (this.recommends[scene] = { items: [], loading: false })
+      const slot = this.recommends[scene] || (this.recommends[scene] = { items: [], loading: false, degraded: false })
       slot.loading = true
       try {
         const data = await aiApi.recommend({ scene, productId, limit })
         slot.items = data?.items || []
+        slot.degraded = false
         return slot.items
       } catch {
-        slot.items = []
-        return []
+        // 推荐接口失败：降级为最新商品（两处兜底都失败则为空态）
+        slot.items = await this.fetchLatestFallback(limit)
+        slot.degraded = true
+        return slot.items
       } finally {
         slot.loading = false
+      }
+    },
+
+    /** 推荐降级兜底：最新商品（映射为推荐位 items 结构，reason=最新上架） */
+    async fetchLatestFallback(limit) {
+      try {
+        const data = await goodsApi.getList({ sort: 'latest', page: 1, pageSize: limit })
+        return (data?.list || []).map((g) => ({
+          id: g.id,
+          title: g.title,
+          price: g.price,
+          originalPrice: g.originalPrice,
+          cover: g.cover,
+          category: g.category,
+          condition: g.condition,
+          reason: '最新上架'
+        }))
+      } catch {
+        return []
       }
     }
   }

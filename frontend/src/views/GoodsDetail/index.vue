@@ -79,9 +79,16 @@
         </button>
       </section>
 
-      <!-- 相关推荐：GET /api/ai/recommend?scene=detail（同分类 + 热门兜底） -->
+      <!-- 相关推荐：GET /api/ai/recommend?scene=detail（同分类 + 热门兜底；接口失败降级最新商品） -->
       <section class="page-section">
-        <AiRecommendCard title="相关推荐" :items="recommend.items" :loading="recommend.loading" :count="4" @click="goDetail" />
+        <AiRecommendCard
+          title="相关推荐"
+          :items="recommend.items"
+          :loading="recommend.loading"
+          :degraded="recommend.degraded"
+          :count="4"
+          @click="onRecommendClick"
+        />
       </section>
     </template>
 
@@ -136,6 +143,7 @@ import { useAiStore } from '@/store/ai'
 import { useUserStore } from '@/store/user'
 import { creditLevel } from '@/utils/dict'
 import { formatViews, formatTime } from '@/utils/format'
+import { trackRecommendClick } from '@/utils/analytics'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,6 +239,12 @@ async function onShare() {
 
 function goDetail(item) {
   router.push(`/product/${item.id}`)
+}
+
+// 相关推荐点击：埋点（步骤 7）后跳详情
+function onRecommendClick(item) {
+  trackRecommendClick({ scene: 'detail', item, from: 'detail-related' })
+  goDetail(item)
 }
 
 function goList() {

@@ -28,9 +28,15 @@
       </button>
     </nav>
 
-    <!-- AI 推荐位：猜你喜欢（GET /api/ai/recommend?scene=home，免登录降级热门） -->
+    <!-- AI 推荐位：猜你喜欢（GET /api/ai/recommend?scene=home，免登录降级热门；接口失败降级最新商品） -->
     <section class="page-section">
-      <AiRecommendCard :items="recommend.items" :loading="recommend.loading" :count="4" @click="goDetail" />
+      <AiRecommendCard
+        :items="recommend.items"
+        :loading="recommend.loading"
+        :degraded="recommend.degraded"
+        :count="4"
+        @click="onRecommendClick"
+      />
     </section>
 
     <!-- 最新商品 -->
@@ -69,6 +75,7 @@ import AiRecommendCard from '@/components/business/AiRecommendCard/index.vue'
 import GoodsSection from './components/GoodsSection.vue'
 import { useHomeData } from '@/composables/useHomeData'
 import { CATEGORY } from '@/utils/dict'
+import { trackRecommendClick } from '@/utils/analytics'
 
 const router = useRouter()
 const heroKeyword = ref('')
@@ -103,6 +110,12 @@ function goCategory(category) {
 
 function goDetail(goods) {
   router.push(`/product/${goods.id}`)
+}
+
+// 推荐位点击：埋点（步骤 7）后跳详情
+function onRecommendClick(item) {
+  trackRecommendClick({ scene: 'home', item, from: 'home-recommend' })
+  goDetail(item)
 }
 </script>
 
