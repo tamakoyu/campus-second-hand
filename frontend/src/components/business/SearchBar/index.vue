@@ -5,6 +5,7 @@
       class="search-bar__input"
       :class="{ 'search-bar__input--round': round }"
       :placeholder="placeholder"
+      :size="elSize"
       clearable
       @keyup.enter="doSearch"
       @clear="doSearch"
@@ -12,22 +13,22 @@
       <template #prefix><el-icon><Search /></el-icon></template>
     </el-input>
 
-    <el-select v-if="categories && categories.length" v-model="cat" class="search-bar__select" placeholder="全部分类" clearable>
+    <el-select v-if="categories && categories.length" v-model="cat" class="search-bar__select" :size="elSize" placeholder="全部分类" clearable>
       <el-option v-for="c in categories" :key="c.value" :label="c.label" :value="c.value" />
     </el-select>
 
-    <el-select v-if="sortOptions && sortOptions.length" v-model="srt" class="search-bar__select" placeholder="排序">
+    <el-select v-if="sortOptions && sortOptions.length" v-model="srt" class="search-bar__select" :size="elSize" placeholder="排序">
       <el-option v-for="s in sortOptions" :key="s.value" :label="s.label" :value="s.value" />
     </el-select>
 
-    <el-button type="primary" class="search-bar__btn" :loading="loading" @click="doSearch">搜索</el-button>
+    <el-button type="primary" class="search-bar__btn" :size="elSize" :loading="loading" @click="doSearch">搜索</el-button>
   </div>
 </template>
 
 <script setup>
 /**
  * 通用搜索栏：关键词 + 分类 + 排序；支持 v-model 双向绑定与路由参数同步（清单）
- * props: modelValue / categories / sortOptions / category / sort / round / placeholder / loading
+ * props: modelValue / categories / sortOptions / category / sort / round / placeholder / loading / size(sm|md|lg)
  * event: search({keyword, category, sort})、update:modelValue / update:category / update:sort
  */
 import { computed } from 'vue'
@@ -41,7 +42,8 @@ const props = defineProps({
   sort: { type: String, default: '' },
   round: { type: Boolean, default: true },
   placeholder: { type: String, default: '搜索想要的闲置好物' },
-  loading: { type: Boolean, default: false }
+  loading: { type: Boolean, default: false },
+  size: { type: String, default: 'md', validator: (v) => ['sm', 'md', 'lg'].includes(v) }
 })
 const emit = defineEmits(['update:modelValue', 'update:category', 'update:sort', 'search'])
 
@@ -57,6 +59,8 @@ const srt = computed({
   get: () => props.sort,
   set: (v) => emit('update:sort', v)
 })
+// sm/md/lg -> Element Plus 的 small/default/large
+const elSize = computed(() => ({ sm: 'small', md: 'default', lg: 'large' })[props.size])
 
 function doSearch() {
   emit('search', { keyword: kw.value.trim(), category: cat.value, sort: srt.value })
