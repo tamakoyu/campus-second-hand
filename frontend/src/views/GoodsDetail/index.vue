@@ -31,6 +31,10 @@
 
           <div class="detail-info__price">
             <BasePrice :price="goods.price" :original="goods.originalPrice" size="lg" />
+            <div v-if="goods.estimatedPrice != null" class="detail-info__suggest">
+              <AiBadge size="sm" />
+              <span class="detail-info__suggest-text tabular-nums">AI 建议价 {{ formatPrice(goods.estimatedPrice) }}</span>
+            </div>
           </div>
 
           <div class="detail-info__meta">
@@ -40,10 +44,11 @@
             <span class="detail-info__stat">发布于 {{ formatTime(goods.createdAt) }}</span>
           </div>
 
-          <!-- 交易操作区：收藏（接口待定占位）/ 私信卖家 / 分享 -->
+          <!-- 交易操作区：收藏（POST /api/favorites/{id} toggle）/ 私信卖家 / 分享 -->
           <div class="detail-info__actions">
-            <el-button class="detail-info__btn" @click="onFavorite">
-              <el-icon class="detail-info__btn-icon"><Star /></el-icon>收藏
+            <el-button class="detail-info__btn" :class="{ 'detail-info__btn--faved': goods.favorited }" @click="onFavorite">
+              <el-icon class="detail-info__btn-icon"><StarFilled v-if="goods.favorited" /><Star v-else /></el-icon>
+              {{ goods.favorited ? '已收藏' : '收藏' }}
             </el-button>
             <el-button type="primary" class="detail-info__btn" @click="onContact">
               <el-icon class="detail-info__btn-icon"><ChatDotRound /></el-icon>私信卖家
@@ -127,7 +132,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Star, ChatDotRound, Share } from '@element-plus/icons-vue'
+import { Star, StarFilled, ChatDotRound, Share } from '@element-plus/icons-vue'
 import PageHeader from '@/components/business/PageHeader/index.vue'
 import AiRecommendCard from '@/components/business/AiRecommendCard/index.vue'
 import AiBadge from '@/components/business/AiBadge/index.vue'
@@ -139,10 +144,11 @@ import BaseTag from '@/components/common/BaseTag/index.vue'
 import BaseSkeleton from '@/components/common/BaseSkeleton/index.vue'
 import BaseEmpty from '@/components/common/BaseEmpty/index.vue'
 import { useGoodsDetail } from '@/composables/useGoodsDetail'
+import goodsApi from '@/api/goods'
 import { useAiStore } from '@/store/ai'
 import { useUserStore } from '@/store/user'
 import { creditLevel } from '@/utils/dict'
-import { formatViews, formatTime } from '@/utils/format'
+import { formatViews, formatTime, formatPrice } from '@/utils/format'
 import { trackRecommendClick } from '@/utils/analytics'
 
 const route = useRoute()
@@ -214,13 +220,19 @@ function onContact() {
   router.push({ path: '/message', query: { productId: productId.value } })
 }
 
-function onFavorite() {
+// 收藏：toggle（POST /api/favorites/{productId} -> {favorited}，联调核对步骤 9）
+async function onFavorite() {
   if (!userStore.isLoggedIn) {
     router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
-  // 收藏接口待后端定义（联调约定 §9 待补充，V0.5 联调后开放）
-  ElMessage({ message: '收藏接口待后端补充，V0.5 联调后开放', type: 'info' })
+  try {
+    const data = await goodsApi.toggleFavorite(productId.value)
+    if (goods.value) goods.value.favorited = data.favorited
+    ElMessage({ message: data.favorited ? '已收藏' : '已取消收藏', type: 'success' })
+  } catch {
+    // 失败提示由 request 拦截器统一处理
+  }
 }
 
 async function onShare() {
@@ -284,7 +296,22 @@ function goList() {
   }
 
   &__price {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
     margin-top: var(--space-4);
+  }
+
+  &__suggest {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  &__suggest-text {
+    font-size: var(--fs-aux);
+    color: var(--color-text-2);
   }
 
   &__meta {
@@ -310,6 +337,11 @@ function goList() {
   &__btn-icon {
     margin-right: 2px;
     vertical-align: -2px;
+  }
+
+  &__btn--faved {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
   }
 }
 

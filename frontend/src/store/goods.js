@@ -38,7 +38,8 @@ export const useGoodsStore = defineStore('goods', {
         const data = await goodsApi.getList({
           ...this.filters,
           page: this.page,
-          pageSize: this.pageSize
+          // 后端 ProductQueryDTO 分页参数为 size（联调核对，步骤 9；响应仍是 pageSize）
+          size: this.pageSize
         })
         this.list = data.list || []
         this.total = data.total || 0

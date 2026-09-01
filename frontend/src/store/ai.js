@@ -71,16 +71,20 @@ export const useAiStore = defineStore('ai', {
     },
 
     /**
-     * 拉取推荐位（home 免登录；detail 传 productId）。
-     * 接口失败时静默降级为最新商品（计划书步骤 7），并标记 degraded 供 UI 提示。
-     * @param {'home'|'detail'} scene
+     * 拉取推荐位（联调核对步骤 9：后端为 GET /api/products/recommend?limit=，返回数组）。
+     * 失败时静默降级为最新商品（计划书步骤 7），并标记 degraded 供 UI 提示。
+     * @param {'home'|'detail'} scene 仅用于场景缓存与文案，不再作为请求参数
      */
-    async fetchRecommend(scene, { productId, limit = 8 } = {}) {
+    async fetchRecommend(scene, { limit = 8 } = {}) {
       const slot = this.recommends[scene] || (this.recommends[scene] = { items: [], loading: false, degraded: false })
       slot.loading = true
       try {
-        const data = await aiApi.recommend({ scene, productId, limit })
-        slot.items = data?.items || []
+        const list = await aiApi.recommend({ limit })
+        // 后端返回数组（无 reason），补推荐理由文案供推荐位展示
+        slot.items = (Array.isArray(list) ? list : []).map((item) => ({
+          ...item,
+          reason: item.reason || (scene === 'detail' ? '为你推荐' : '猜你喜欢')
+        }))
         slot.degraded = false
         return slot.items
       } catch {
@@ -96,7 +100,7 @@ export const useAiStore = defineStore('ai', {
     /** 推荐降级兜底：最新商品（映射为推荐位 items 结构，reason=最新上架） */
     async fetchLatestFallback(limit) {
       try {
-        const data = await goodsApi.getList({ sort: 'latest', page: 1, pageSize: limit })
+        const data = await goodsApi.getList({ sort: 'latest', page: 1, size: limit })
         return (data?.list || []).map((g) => ({
           id: g.id,
           title: g.title,

@@ -11,7 +11,7 @@ import { request } from '@/utils/request'
  * @param {number} [params.maxPrice] 最高价（分）
  * @param {string} [params.sort] latest(默认)/price_asc/price_desc/hot
  * @param {number} [params.page] 从 1 起，默认 1
- * @param {number} [params.pageSize] 默认 10，最大 100
+ * @param {number} [params.size] 每页条数，默认 10，最大 100（后端 ProductQueryDTO 字段为 size，响应仍为 pageSize）
  * @returns {Promise<{list: object[], total: number, page: number, pageSize: number}>}
  */
 export function getList(params) {
@@ -27,10 +27,15 @@ export function getDetail(id) {
   return request.get(`/products/${id}`)
 }
 
-// 收藏相关接口（API 规范尚未定义，V0.5 前由后端补进 §9/附录后在此实现）
-// export function favorite(id) { return request.post(`/products/${id}/favorite`) }
-// export function unfavorite(id) { return request.delete(`/products/${id}/favorite`) }
-// export function getFavorites(params) { return request.get('/favorites', { params }) }
+// 收藏接口已确认（步骤 9 联调）：POST /api/favorites/{productId} toggle，返回 {favorited}
+/**
+ * 收藏 / 取消收藏（toggle；需登录，联调期后端默认 userId=1）
+ * @param {number|string} productId
+ * @returns {Promise<{favorited: boolean}>}
+ */
+export function toggleFavorite(productId) {
+  return request.post(`/favorites/${productId}`)
+}
 
-const goodsApi = { getList, getDetail }
+const goodsApi = { getList, getDetail, toggleFavorite }
 export default goodsApi

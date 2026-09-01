@@ -49,12 +49,14 @@ export function review(data) {
 }
 
 /**
- * AI 推荐位（免登录，10s 超时；未登录降级热门；失败时页面兜底不阻塞）
- * @param {{ scene: 'home'|'detail', productId?: number|string, limit?: number }} params limit 默认 8 最大 20
- * @returns {Promise<{items: {id, title, price, cover, category, condition, reason}[]}>}
+ * 猜你喜欢（联调核对步骤 9：后端实际实现为 GET /api/products/recommend，返回数组）
+ * 当前后端无 scene=detail 同分类推荐、无 reason 字段，展示侧由 store 补兜底文案；
+ * 返回 ProductListItemVO[]（金额单位分），失败时页面兜底不阻塞。
+ * @param {{ limit?: number }} params limit 默认 10，最大 20
+ * @returns {Promise<object[]>}
  */
 export function recommend(params) {
-  return request.get('/ai/recommend', { params, silent: true })
+  return request.get('/products/recommend', { params, silent: true })
 }
 
 const aiApi = { identify, describe, estimate, chat, review, recommend }

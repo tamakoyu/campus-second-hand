@@ -29,8 +29,8 @@ export function useGoodsDetail(productId) {
     const id = ++seq
     loading.value = true
     error.value = false
-    // 相关推荐并行请求（推荐位失败静默兜底为空态，联调约定 §5）
-    aiStore.fetchRecommend('detail', { productId: productId.value, limit: 8 })
+    // 相关推荐并行请求（后端为 GET /api/products/recommend，无 scene 参数；失败静默兜底为空态）
+    aiStore.fetchRecommend('detail', { limit: 8 })
     try {
       const data = await goodsApi.getDetail(productId.value)
       if (id !== seq) return
