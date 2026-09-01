@@ -28,7 +28,12 @@
     </div>
 
     <div class="goods-card__body">
-      <h3 class="goods-card__title">{{ goods.title }}</h3>
+      <h3 class="goods-card__title">
+        <template v-for="(part, i) in titleParts" :key="i">
+          <mark v-if="part.hit" class="goods-card__highlight">{{ part.text }}</mark>
+          <template v-else>{{ part.text }}</template>
+        </template>
+      </h3>
       <BasePrice class="goods-card__price" :price="goods.price" :original="goods.originalPrice" size="sm" />
       <div class="goods-card__tags">
         <BaseTag v-if="goods.conditionName" round>{{ goods.conditionName }}</BaseTag>
@@ -45,8 +50,8 @@
 
 <script setup>
 /**
- * 商品卡片：图 + 标题 + 价格 + 成色/分类标签 + 卖家信用行；hover 上浮（清单、规范 §4.2）
- * props: goods（字段适配后的对象）/ showSeller / aiTag / favoritable
+ * 商品卡片：图 + 标题（支持关键词高亮）+ 价格 + 成色/分类标签 + 卖家信用行；hover 上浮（清单、规范 §4.2）
+ * props: goods（字段适配后的对象）/ showSeller / aiTag / favoritable / highlight（关键词，列表页检索高亮）
  * event: click(goods) / favorite(goods)
  */
 import { computed } from 'vue'
@@ -59,11 +64,34 @@ const props = defineProps({
   goods: { type: Object, required: true },
   showSeller: { type: Boolean, default: true },
   aiTag: { type: Boolean, default: false },
-  favoritable: { type: Boolean, default: false }
+  favoritable: { type: Boolean, default: false },
+  highlight: { type: String, default: '' }
 })
 const emit = defineEmits(['click', 'favorite'])
 
 const avatarText = computed(() => (props.goods?.seller?.name || '同').slice(0, 1))
+
+// 标题按关键词切分（不区分大小写），命中片段用 <mark> 高亮
+const titleParts = computed(() => {
+  const kw = props.highlight?.trim()
+  const title = props.goods?.title || ''
+  if (!kw) return [{ text: title, hit: false }]
+  const lowerTitle = title.toLowerCase()
+  const lowerKw = kw.toLowerCase()
+  const parts = []
+  let idx = 0
+  for (;;) {
+    const i = lowerTitle.indexOf(lowerKw, idx)
+    if (i === -1) {
+      if (idx < title.length) parts.push({ text: title.slice(idx), hit: false })
+      break
+    }
+    if (i > idx) parts.push({ text: title.slice(idx, i), hit: false })
+    parts.push({ text: title.slice(i, i + kw.length), hit: true })
+    idx = i + kw.length
+  }
+  return parts.length ? parts : [{ text: title, hit: false }]
+})
 </script>
 
 <style scoped lang="scss">
@@ -150,6 +178,15 @@ const avatarText = computed(() => (props.goods?.seller?.name || '同').slice(0, 
     min-height: calc(var(--lh-body) * 2);
     font-size: var(--fs-body);
     line-height: var(--lh-body);
+    font-weight: var(--fw-medium);
+  }
+
+  // 检索关键词高亮：浅灰底黑字（黑白体系，规范 §2）
+  &__highlight {
+    padding: 0 2px;
+    border-radius: 2px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
     font-weight: var(--fw-medium);
   }
 
