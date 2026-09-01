@@ -3,6 +3,9 @@ import { defineStore } from 'pinia'
 import aiApi from '@/api/ai'
 import goodsApi from '@/api/goods'
 
+/** 商品上下文欢迎语（步骤 8：AI 能回答“这个商品”相关问题；随 history 一并传给后端） */
+const GREETING = { role: 'assistant', content: '你好，我是这个商品的 AI 助手，成色、价格、交易方式都可以问我～' }
+
 export const useAiStore = defineStore('ai', {
   state: () => ({
     // 问答会话：{ [productId]: { messages: [{role, content, manual?}], loading: boolean } }
@@ -24,10 +27,10 @@ export const useAiStore = defineStore('ai', {
   },
 
   actions: {
-    /** 初始化某商品的会话（首次进入详情页时调用） */
+    /** 初始化某商品的会话（首次进入详情页时调用）；自带商品上下文欢迎语 */
     initChat(productId) {
       if (!this.chats[productId]) {
-        this.chats[productId] = { messages: [], loading: false }
+        this.chats[productId] = { messages: [GREETING], loading: false }
       }
     },
 
@@ -62,9 +65,9 @@ export const useAiStore = defineStore('ai', {
       }
     },
 
-    /** 清空某商品会话 */
+    /** 清空某商品会话（清空后重新展示欢迎语） */
     clearChat(productId) {
-      if (this.chats[productId]) this.chats[productId].messages = []
+      if (this.chats[productId]) this.chats[productId].messages = [GREETING]
     },
 
     /**

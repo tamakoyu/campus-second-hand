@@ -16,8 +16,9 @@
           </span>
           <template v-else>{{ displayText(msg, i) }}</template>
         </div>
-        <div v-if="msg.role === 'assistant' && (msg.fallback || msg.suggestManual)" class="ai-chat__actions">
-          <el-button size="small" @click="transfer">
+        <div v-if="msg.role === 'assistant' && (isTyping(i) || msg.fallback || msg.suggestManual)" class="ai-chat__actions">
+          <el-button v-if="isTyping(i)" size="small" @click="stopTyping(i)">停止</el-button>
+          <el-button v-if="!isTyping(i) && (msg.fallback || msg.suggestManual)" size="small" @click="transfer">
             <el-icon class="ai-chat__actions-icon"><ChatDotRound /></el-icon>转人工私信
           </el-button>
         </div>
@@ -53,7 +54,7 @@
 
 <script setup>
 /**
- * AI 问答聊天容器：消息列表 + 输入区 + 快捷问题 + 打字机动画 + 转人工（规范 §9、清单）
+ * AI 问答聊天容器：消息列表 + 输入区 + 快捷问题 + 打字机动画（可停止）+ 转人工（规范 §8.1/§9、清单）
  * 非流式：回答一次性返回，打字动画由本组件逐字模拟（联调约定 §5）。
  * props: messages([{role, content, fallback?, suggestManual?}]) / loading / quickQuestions(string[])
  * event: send(text) / transferHuman({question}) / clear
@@ -132,6 +133,14 @@ function send(text) {
 function transfer() {
   const lastUser = [...props.messages].reverse().find((m) => m.role === 'user')
   emit('transferHuman', { question: lastUser ? lastUser.content : '' })
+}
+
+// 停止当前打字动画：直接展示完整回答（规范 §8.1「回答中可停止」）
+function stopTyping(i) {
+  const m = props.messages[i]
+  if (!m || m.role !== 'assistant') return
+  clearTimeout(timer)
+  typed[i] = m.content
 }
 </script>
 
