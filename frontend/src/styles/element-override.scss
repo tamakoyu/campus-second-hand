@@ -1,0 +1,74 @@
+// ============================================================
+// Element Plus 主题变量覆盖 —— 对齐设计 Token（《前端开发规范 v1.0》）
+// 注意：成功态语义色映射为黑色（全站禁用绿色，成功用黑色 + 图标表达）。
+// ============================================================
+:root {
+  // 主色（近黑）
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: #333333;
+  --el-color-primary-light-5: #666666;
+  --el-color-primary-light-7: #999999;
+  --el-color-primary-light-8: #bbbbbb;
+  --el-color-primary-light-9: #eeeeee;
+  --el-color-primary-dark-2: var(--color-primary-hover);
+
+  // 语义色：success 映射黑色（禁绿）；warning/danger 保留功能性两色
+  --el-color-success: var(--color-primary);
+  --el-color-success-light-3: #333333;
+  --el-color-success-light-5: #666666;
+  --el-color-success-light-7: #999999;
+  --el-color-success-light-8: #bbbbbb;
+  --el-color-success-light-9: #eeeeee;
+  --el-color-success-dark-2: #000000;
+  --el-color-warning: var(--color-warning);
+  --el-color-danger: var(--color-danger);
+
+  // 文字
+  --el-text-color-primary: var(--color-text-1);
+  --el-text-color-regular: var(--color-text-2);
+  --el-text-color-secondary: var(--color-text-3);
+  --el-text-color-placeholder: var(--color-text-3);
+  --el-text-color-disabled: var(--color-text-3);
+
+  // 边框 / 分隔
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-divider);
+  --el-border-color-lighter: var(--color-divider);
+  --el-border-color-extra-light: var(--color-divider);
+  --el-border-color-hover: var(--color-primary-border);
+
+  // 背景
+  --el-bg-color: var(--color-bg-surface);
+  --el-bg-color-page: var(--color-bg-page);
+  --el-bg-color-overlay: var(--color-bg-surface);
+  --el-fill-color: var(--color-bg-subtle);
+  --el-fill-color-light: var(--color-primary-soft);
+  --el-fill-color-lighter: var(--color-primary-soft);
+  --el-fill-color-blank: var(--color-bg-surface);
+
+  // 圆角
+  --el-border-radius-base: var(--radius-md);   // 8px
+  --el-border-radius-small: var(--radius-sm);  // 6px
+  --el-border-radius-round: var(--radius-full);
+
+  // 字体
+  --el-font-family: var(--font-family);
+  --el-font-size-base: var(--fs-body);
+
+  // 按钮默认尺寸（规范 §6.2：md 高 40px、圆角 8px）
+  --el-component-size: 40px;
+
+  // 输入框聚焦：1px 黑边 + 黑色 12% 聚焦环（规范 §7）
+  --el-input-focus-border-color: var(--color-primary);
+  --el-input-hover-border-color: var(--color-primary-border);
+
+  // 阴影（对齐设计 token）
+  --el-box-shadow-light: var(--shadow-md);
+  --el-box-shadow: var(--shadow-lg);
+
+  // Message：成功态黑色 + 顶部居中（规范 §8.4）
+  --el-message-success-bg-color: var(--color-bg-surface);
+  --el-message-success-border-color: var(--color-primary);
+  --el-message-success-text-color: var(--color-text-1);
+  --el-message-success-icon-color: var(--color-primary);
+}
