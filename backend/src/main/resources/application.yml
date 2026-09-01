@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: second-hand-backend
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/second_hand
+    username: postgres
+    # 数据库密码用环境变量注入（本地运行：set DB_PASSWORD=你的密码）；不要提交真实密码
+    password: "${DB_PASSWORD:123456}"
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# ============ AI 模块配置 ============
+ai:
+  # 大模型服务开关（规范 v1.1 第 6 节，组长统一控制）：
+  #   enabled=false → 全链路规则引擎/默认文案（降级模式）
+  #   mock=true     → MockAiService 预设/规则响应（联调与答辩演示，零网络依赖）
+  #   enabled=true + mock=false → 真实模型（配置 ai.llm.* 与供应商 key）
+  enabled: false
+  mock: true
+  llm:
+    base-url: https://api.example.com/v1
+    api-key: "${LLM_API_KEY:sk-xxxx}"
+    model: gpt-4o-mini
+    # 超时约定（规范 v1.0 第 7 节）：连接 3 秒 + 读取 5 秒；chat 可放宽至 10 秒
+    connect-timeout-ms: 3000
+    read-timeout-ms: 5000
+  # AI 辅助审核开关：true=发布进入审核中(4)，false=直接上架(1)
+  audit-on-publish: true
+
+# 跨域允许的来源（前端开发服务器地址，按团队实际修改）
+cors:
+  allowed-origins:
+    - http://localhost:5173
+    - http://localhost:3000
+    - http://127.0.0.1:5173

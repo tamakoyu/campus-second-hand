@@ -12,3 +12,12 @@
 | 组长 / AI 服务层 | 陈思瀚 |
 
 > 前端设计规范与联调约定见 `docs/`；接口契约见《接口约定规范-API-v1.1.md》；前端启动方式见 `frontend/README.md`。
+
+## 后端模块（田博）
+
+后端代码位于 **`backend/`**（Spring Boot 3.2.5 + MyBatis-Plus 3.5.7 + PostgreSQL）：
+
+- 模块内容与田博贡献清单：见 `backend/README.md`
+- 数据库设计：`backend/sql/schema.sql`（14 表，PostgreSQL）
+- 接口说明：`backend/docs/接口说明文档.md`（对齐《接口约定规范-API-v1.1.md》）
+- 启动方式：见 `backend/README.md`（需联网环境）
