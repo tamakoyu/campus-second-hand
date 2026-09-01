@@ -71,6 +71,7 @@ function doSearch() {
 .search-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
   width: 100%;
 

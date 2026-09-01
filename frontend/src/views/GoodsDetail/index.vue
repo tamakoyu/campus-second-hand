@@ -35,7 +35,29 @@
               <AiBadge size="sm" />
               <span class="detail-info__suggest-text tabular-nums">AI 建议价 {{ formatPrice(goods.estimatedPrice) }}</span>
             </div>
+            <el-button
+              class="detail-info__estimate"
+              size="small"
+              :loading="aiStore.estimate.loading"
+              @click="onEstimate"
+            >
+              <AiBadge size="sm" /> 实时估价
+            </el-button>
           </div>
+
+          <!-- AI 估价结果：建议价 + 区间 + 理由（POST /api/ai/estimate，规则引擎兜底） -->
+          <div v-if="aiStore.estimate.data" class="estimate">
+            <p class="estimate__main">
+              <AiBadge size="sm" />
+              <span class="estimate__price tabular-nums">{{ formatPrice(aiStore.estimate.data.suggestPrice) }}</span>
+              <span v-if="aiStore.estimate.data.priceRange" class="estimate__range tabular-nums">
+                区间 {{ formatPriceRange(aiStore.estimate.data.priceRange.min, aiStore.estimate.data.priceRange.max) }}
+              </span>
+              <BaseTag v-if="aiStore.estimate.data.engine === 'rule'" type="warning">规则引擎</BaseTag>
+            </p>
+            <p v-if="aiStore.estimate.data.reason" class="estimate__reason">{{ aiStore.estimate.data.reason }}</p>
+          </div>
+          <div v-else-if="aiStore.estimate.error" class="estimate estimate--error">估价失败，请稍后重试</div>
 
           <div class="detail-info__meta">
             <BaseTag v-if="goods.conditionName" round>{{ goods.conditionName }}</BaseTag>
@@ -46,7 +68,7 @@
 
           <!-- 交易操作区：收藏（POST /api/favorites/{id} toggle）/ 私信卖家 / 分享 -->
           <div class="detail-info__actions">
-            <el-button class="detail-info__btn" :class="{ 'detail-info__btn--faved': goods.favorited }" @click="onFavorite">
+            <el-button class="detail-info__btn" :class="{ 'detail-info__btn--faved': goods.favorited }" :loading="favoriteLoading" @click="onFavorite">
               <el-icon class="detail-info__btn-icon"><StarFilled v-if="goods.favorited" /><Star v-else /></el-icon>
               {{ goods.favorited ? '已收藏' : '收藏' }}
             </el-button>
@@ -148,7 +170,7 @@ import goodsApi from '@/api/goods'
 import { useAiStore } from '@/store/ai'
 import { useUserStore } from '@/store/user'
 import { creditLevel } from '@/utils/dict'
-import { formatViews, formatTime, formatPrice } from '@/utils/format'
+import { formatViews, formatTime, formatPrice, formatPriceRange } from '@/utils/format'
 import { trackRecommendClick } from '@/utils/analytics'
 
 const route = useRoute()
@@ -161,6 +183,7 @@ const { goods, loading, error, load, recommend } = useGoodsDetail(productId)
 
 const chatVisible = ref(false)
 const descCollapsed = ref(true)
+const favoriteLoading = ref(false)
 
 /** 预设快捷问题（计划书步骤 6） */
 const QUICK_QUESTIONS = ['成色怎么样？', '可以刀吗？', '怎么交易？', '支持自提吗？']
@@ -226,13 +249,30 @@ async function onFavorite() {
     router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
+  favoriteLoading.value = true
   try {
     const data = await goodsApi.toggleFavorite(productId.value)
     if (goods.value) goods.value.favorited = data.favorited
     ElMessage({ message: data.favorited ? '已收藏' : '已取消收藏', type: 'success' })
   } catch {
     // 失败提示由 request 拦截器统一处理
+  } finally {
+    favoriteLoading.value = false
   }
+}
+
+// AI 实时估价（POST /api/ai/estimate，需登录；金额单位分，规则引擎兜底）
+function onEstimate() {
+  if (!userStore.isLoggedIn) {
+    ElMessage({ message: '登录后即可使用 AI 估价', type: 'warning' })
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  aiStore.fetchEstimate({
+    originalPrice: goods.value?.originalPrice ?? goods.value?.price,
+    category: goods.value?.category,
+    condition: goods.value?.condition != null ? Number(goods.value.condition) : null
+  })
 }
 
 async function onShare() {
@@ -314,6 +354,10 @@ function goList() {
     color: var(--color-text-2);
   }
 
+  &__estimate {
+    margin-left: auto;
+  }
+
   &__meta {
     display: flex;
     align-items: center;
@@ -342,6 +386,45 @@ function goList() {
   &__btn--faved {
     color: var(--color-primary);
     border-color: var(--color-primary);
+  }
+}
+
+.estimate {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+
+  &__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  &__price {
+    font-size: var(--fs-title-sm);
+    line-height: var(--lh-title-sm);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+  }
+
+  &__range {
+    font-size: var(--fs-aux);
+    color: var(--color-text-2);
+  }
+
+  &__reason {
+    margin-top: var(--space-1);
+    font-size: var(--fs-aux);
+    line-height: var(--lh-aux);
+    color: var(--color-text-2);
+  }
+
+  &--error {
+    font-size: var(--fs-aux);
+    color: var(--color-danger);
   }
 }
 

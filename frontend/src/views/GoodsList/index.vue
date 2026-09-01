@@ -220,6 +220,8 @@ function onPriceChange() {
 function onPageChange(p) {
   page.value = p
   pushQuery()
+  // 翻页后回到列表顶部，避免停留在旧位置（规范 §8.5）
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function resetFilters() {

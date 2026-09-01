@@ -14,7 +14,9 @@ export const useAiStore = defineStore('ai', {
     recommends: {
       home: { items: [], loading: false, degraded: false },
       detail: { items: [], loading: false, degraded: false }
-    }
+    },
+    // AI 估价（详情页）：{ loading, data, error }
+    estimate: { loading: false, data: null, error: false }
   }),
 
   getters: {
@@ -94,6 +96,26 @@ export const useAiStore = defineStore('ai', {
         return slot.items
       } finally {
         slot.loading = false
+      }
+    },
+
+    /**
+     * AI 智能估价（详情页，需登录；后端 AiEstimateVO：suggestPrice/priceRange 单位分）
+     * 失败时标记 error（后端自身失败会降级规则引擎返回 engine=rule，一般不走到 catch）
+     * @param {{ originalPrice: number, category: string, condition?: number|null }} payload
+     */
+    async fetchEstimate(payload) {
+      this.estimate.loading = true
+      this.estimate.error = false
+      try {
+        this.estimate.data = await aiApi.estimate(payload)
+        return this.estimate.data
+      } catch {
+        this.estimate.error = true
+        this.estimate.data = null
+        return null
+      } finally {
+        this.estimate.loading = false
       }
     },
 
