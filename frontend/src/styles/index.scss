@@ -1,0 +1,104 @@
+// 全局样式入口：token -> reset -> Element Plus 覆盖 -> 全局工具类
+@use './variables.scss';
+@use './reset.scss';
+@use './element-override.scss';
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text-1);
+  background-color: var(--color-bg-page);
+}
+
+// 数字等宽（价格、统计）
+.tabular-nums {
+  font-family: var(--font-family-number);
+  font-variant-numeric: tabular-nums;
+}
+
+// ---------- 布局工具类 ----------
+// 页面内容容器：最大宽 1200px，两侧留白 >= 24px（规范 §4.2）
+.page-container {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 var(--layout-side-padding);
+}
+
+// 页面主体（头部以下到页脚）
+.page-main {
+  min-height: calc(100vh - var(--layout-header-height) - var(--layout-footer-height));
+}
+
+// 页面区块：标题区 -> 内容区 -> 底部留白 32px（规范 §4.2）
+.page-section {
+  margin-bottom: var(--space-8);
+
+  &__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+
+    .section-title {
+      font-size: var(--fs-title-sm);
+      line-height: var(--lh-title-sm);
+      font-weight: var(--fw-semibold);
+    }
+
+    .section-more {
+      font-size: var(--fs-body);
+      color: var(--color-text-2);
+      transition: color var(--duration-fast) var(--ease-standard);
+
+      &:hover {
+        color: var(--color-primary);
+      }
+    }
+  }
+}
+
+// 隐藏滚动条（首页/推荐位横向滚动容器用，规范 §8.5）
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// ---------- 页面切换动效（规范 §8.6：160ms 淡入 + 8px 位移） ----------
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+// 尊重系统减少动效（规范 §8.6）
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
